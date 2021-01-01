@@ -3,18 +3,30 @@
 #include "ray.h"
 #include <iostream>
 
-bool hit_sphere(const point3& center, double radius, const ray& r) {
-    double a = dot(r.direction(), r.direction());
-    double b = 2 * dot(r.direction(), (r.origin() - center));
-    double c = dot((center + r.origin()), (center + r.origin())) - radius * radius;
-    double discriminant = b*b - 4*a*c;
-    return (discriminant > 0);
+double hit_sphere(const point3& center, double radius, const ray& r) {
+    vec3 oc = r.origin() - center;
+    auto a = r.direction().length_squared();
+    auto half_b = dot(oc, r.direction());
+    auto c = oc.length_squared() - radius*radius;
+    auto discriminant = half_b*half_b - a*c;
+
+    // return t>0 or -1
+    if (discriminant < 0) {
+        return -1;
+    }
+    return (-half_b - sqrt(discriminant) ) / a;
 }
 
 
 color ray_color(const ray& r) {
-    if (hit_sphere(point3(0,0,-1), 0.5, r))
-        return color(1, 0, 0);
+    point3 sphere_position(0, 0, -1);
+    auto t_sphere = hit_sphere(sphere_position, 0.5, r);
+    if (t_sphere > 0) {
+        // if we found t satisfiying equation, ray hits the sphere
+        // compute normale N
+        vec3 N = unit_vector(r.at(t_sphere) - sphere_position);
+        return 0.5*color(N.x()+1, N.y()+1, N.z()+1);
+    }
 
     vec3 unit_direction = unit_vector(r.direction());
     auto t = 0.5*(unit_direction.y() + 1.0);
