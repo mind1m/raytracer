@@ -7,6 +7,7 @@ set ( CMAKE_CXX_STANDARD 11 )
 set ( SOURCE_RAYTRACER
     src/vec3.h
     src/color.h
+    src/ray.h
     src/main.cpp
 )
 
