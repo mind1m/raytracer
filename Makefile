@@ -1,7 +1,7 @@
-build:
-	g++ -std=c++14 main.cpp -o raytracer.out
+cmake:
+	cmake --build build
 
 gen:
-	./raytracer.out > image.ppm && open image.ppm
+	build/raytracer > image.ppm && open image.ppm
 
-build_gen: build gen
+build_gen: cmake gen
