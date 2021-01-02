@@ -1,31 +1,24 @@
+#include "utils.h"
 #include "color.h"
 #include "vec3.h"
 #include "ray.h"
+#include "sphere.h"
+#include "camera.h"
+#include "hittable_list.h"
 #include <iostream>
-
-double hit_sphere(const point3& center, double radius, const ray& r) {
-    vec3 oc = r.origin() - center;
-    auto a = r.direction().length_squared();
-    auto half_b = dot(oc, r.direction());
-    auto c = oc.length_squared() - radius*radius;
-    auto discriminant = half_b*half_b - a*c;
-
-    // return t>0 or -1
-    if (discriminant < 0) {
-        return -1;
-    }
-    return (-half_b - sqrt(discriminant) ) / a;
-}
+#include <chrono>
 
 
-color ray_color(const ray& r) {
-    point3 sphere_position(0, 0, -1);
-    auto t_sphere = hit_sphere(sphere_position, 0.5, r);
-    if (t_sphere > 0) {
-        // if we found t satisfiying equation, ray hits the sphere
-        // compute normale N
-        vec3 N = unit_vector(r.at(t_sphere) - sphere_position);
-        return 0.5*color(N.x()+1, N.y()+1, N.z()+1);
+
+color ray_color(const ray& r, const hittable& world) {
+    hit_record hit_rec;
+    bool was_hit = world.hit(r, 0, infinity, hit_rec);
+    if (was_hit) {
+        return 0.5*color(
+            hit_rec.normal.x()+1,
+            hit_rec.normal.y()+1,
+            hit_rec.normal.z()+1)
+        ;
     }
 
     vec3 unit_direction = unit_vector(r.direction());
@@ -41,18 +34,18 @@ int main() {
     const auto aspect_ratio = 16.0 / 9.0;
     const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
+    const int samples_per_pixel = 100;
+
+    // World
+    hittable_list world;
+    world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
+    world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
 
     // Camera
+    camera cam;
 
-    auto viewport_height = 2.0;
-    auto viewport_width = aspect_ratio * viewport_height;
-    auto focal_length = 1.0;
 
-    auto origin = point3(0, 0, 0);
-    auto horizontal = vec3(viewport_width, 0, 0);
-    auto vertical = vec3(0, viewport_height, 0);
-    auto lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
-
+    std::chrono::steady_clock::time_point begin_t = std::chrono::steady_clock::now();
 
 
     // Render
@@ -62,15 +55,23 @@ int main() {
     for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "Progress: " << image_height - j << "/" << image_height << "\n";
         for (int i = 0; i < image_width; ++i) {
-            auto u = double(i) / (image_width-1);
-            auto v = double(j) / (image_height-1);
 
-            ray r(origin, lower_left_corner + u*horizontal + v*vertical - origin);
-            color pixel_color = ray_color(r);
+            // sample each pixel samples_per_pixel times
+            // randomly changing ray position
+            color cumulative_pixel_color;
+            for (int sample = 0; sample < samples_per_pixel; sample++) {
+                auto u = (i + random_double()) / (image_width-1);
+                auto v = (j + random_double()) / (image_height-1);
 
-            write_color(std::cout, pixel_color);
+                cumulative_pixel_color += ray_color(cam.get_ray(u, v), world);
+            }
+
+
+            write_color(std::cout, cumulative_pixel_color, samples_per_pixel);
 
         }
     }
-    std::cerr << "all done\n";
+    std::chrono::steady_clock::time_point end_t = std::chrono::steady_clock::now();
+    std::cerr << "all done in ";
+    std::cerr << std::chrono::duration_cast<std::chrono::milliseconds>(end_t - begin_t).count() << "ms\n";
 }
