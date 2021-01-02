@@ -10,15 +10,18 @@
 
 
 
-color ray_color(const ray& r, const hittable& world) {
+color ray_color(const ray& r, const hittable& world, int depth) {
     hit_record hit_rec;
-    bool was_hit = world.hit(r, 0, infinity, hit_rec);
+
+    // If we've exceeded the ray bounce limit, no more light is gathered.
+    if (depth <= 0)
+        return color(0,0,0);
+
+    bool was_hit = world.hit(r, 0.001, infinity, hit_rec);
     if (was_hit) {
-        return 0.5*color(
-            hit_rec.normal.x()+1,
-            hit_rec.normal.y()+1,
-            hit_rec.normal.z()+1)
-        ;
+        // random reflection
+        point3 target = hit_rec.p + hit_rec.normal + random_unit_vector();
+        return 0.5 * ray_color(ray(hit_rec.p, target - hit_rec.p), world, depth-1);
     }
 
     vec3 unit_direction = unit_vector(r.direction());
@@ -35,6 +38,7 @@ int main() {
     const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
     const int samples_per_pixel = 100;
+    const int max_depth = 50;
 
     // World
     hittable_list world;
@@ -63,7 +67,7 @@ int main() {
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
 
-                cumulative_pixel_color += ray_color(cam.get_ray(u, v), world);
+                cumulative_pixel_color += ray_color(cam.get_ray(u, v), world, max_depth);
             }
 
 
