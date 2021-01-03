@@ -34,38 +34,42 @@ color ray_color(const ray& r, const hittable& world, int depth) {
 }
 
 
-hittable_list random_scene() {
+hittable_list random_scene(const bool draw_small_spheres) {
     hittable_list world;
 
     auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
 
-    double small_radius = 0.2;
-    // iterate and add a bunch of small spheres
-    int bound = 10;  // how far do we draw small balls
-    for (int a=-bound; a <= bound; a++) {
-        for (int b=-bound; b <= bound; b++) {
-            if ((a >= -4) & (a <= 4) & (b >= -1) & (b <= 1)) {
-                // leave the center of the scene empty
-                continue;
-            }
+    if (draw_small_spheres) {
+        double small_radius = 0.2;
+        // iterate and add a bunch of small spheres
+        int bound = 10;  // how far do we draw small balls
+        for (int a=-bound; a <= bound; a++) {
+            for (int b=-bound; b <= bound; b++) {
 
-            point3 center(a + 0.9*random_double(), small_radius, b + 0.9*random_double());
-            double material_selector = random_double();
-            shared_ptr<material> sphere_material;
+                point3 center(a + 0.9*random_double(), small_radius, b + 0.9*random_double());
 
-            if (material_selector < 0.5) {
-                auto albedo = color::random();
-                sphere_material = make_shared<lambertian>(albedo);
-            } else if (material_selector < 0.9) {
-                auto albedo = color::random();
-                auto fuzz = random_double();
-                sphere_material = make_shared<metal>(albedo, fuzz);
-            } else {
-                auto refraction = 1 + random_double();
-                sphere_material = make_shared<dielectric>(refraction);
+                if ((center.x() >= -4) & (center.x() <= 4) & (center.z() >= -1) & (center.z() <= 1)) {
+                    // leave the center of the scene empty
+                    continue;
+                }
+
+                double material_selector = random_double();
+                shared_ptr<material> sphere_material;
+
+                if (material_selector < 0.5) {
+                    auto albedo = color::random();
+                    sphere_material = make_shared<lambertian>(albedo);
+                } else if (material_selector < 0.9) {
+                    auto albedo = color::random(0.5, 1);
+                    auto fuzz = random_double(0, 0.5);
+                    sphere_material = make_shared<metal>(albedo, fuzz);
+                } else {
+                    auto refraction = 1 + random_double();
+                    sphere_material = make_shared<dielectric>(refraction);
+                }
+                world.add(make_shared<sphere>(center, small_radius, sphere_material));
             }
-            world.add(make_shared<sphere>(center, small_radius, sphere_material));
         }
     }
 
@@ -73,7 +77,7 @@ hittable_list random_scene() {
     auto material1 = make_shared<dielectric>(1.5);
     world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, material1));
 
-    auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
+    auto material2 = make_shared<lambertian>(color(0.2, 0.4, 0.1));
     world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2));
 
     auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
@@ -95,7 +99,8 @@ int main() {
     const int max_depth = 50;
 
     // World
-    hittable_list world = random_scene();
+    bool lots_of_small_spheres = true;  // sloooow but nice
+    hittable_list world = random_scene(lots_of_small_spheres);
 
     // camera
     point3 lookfrom(12,2,6);
