@@ -133,4 +133,14 @@ vec3 reflect(const vec3& v, const vec3& n) {
     return v - 2*dot(v,n)*n;
 }
 
+vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
+    auto cos_theta = fmin(dot(-uv, n), 1.0);
+    // perpendicular to normal component of refracted ray
+    vec3 r_per = etai_over_etat * (uv + cos_theta*n);
+    // parallel to normal component of refracted ray
+    vec3 r_par = -sqrt(fabs(1 - r_per.length_squared())) * n;
+    return r_per + r_par;
+}
+
+
 #endif
