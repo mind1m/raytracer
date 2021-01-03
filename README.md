@@ -2,15 +2,15 @@
 My implementation of https://raytracing.github.io/books/RayTracingInOneWeekend.html
 
 
-.. Build
+## Build&run
 
-... For debug builds
+### For debug builds
 
     cmake -B build
     make build_gen
 
 
-... For release builds
+### For release builds
 
     cmake -DCMAKE_BUILD_TYPE=Release build
     make build_gen
