@@ -2,6 +2,8 @@
 My implementation of https://raytracing.github.io/books/RayTracingInOneWeekend.html
 
 
+![alt text](https://github.com/mind1m/raytracer/blob/main/image_quality.png?raw=true)
+
 ## Build&run
 
 ### For debug builds
